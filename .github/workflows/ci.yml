@@ -12,13 +12,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # automerge is a local path dep. Check it out within the workspace and
-      # point AUTOMERGE_DIR at it so mix.exs can find it.
+      # automerge is a local path dep (../gleam-automerge). Check it out as a
+      # sibling directory so the path resolves correctly in CI.
       - name: Check out gleam-automerge dependency
         uses: actions/checkout@v4
         with:
           repository: d-buckner/gleam-automerge
-          path: gleam-automerge
+          path: ../gleam-automerge
 
       - name: Set up Erlang/OTP, Elixir, and Gleam
         uses: erlef/setup-beam@v1
@@ -44,5 +44,3 @@ jobs:
 
       - name: Run tests
         run: AUTOMERGE_BUILD=1 mix gleam.test
-        env:
-          AUTOMERGE_DIR: ${{ github.workspace }}/gleam-automerge

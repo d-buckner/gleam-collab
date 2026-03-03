@@ -1,7 +1,7 @@
 defmodule GleamCollab.MixProject do
   use Mix.Project
 
-  @automerge_dir (System.get_env("AUTOMERGE_DIR") || Path.expand("../gleam-automerge"))
+  @automerge_dir Path.expand("../gleam-automerge")
 
   def project do
     [
