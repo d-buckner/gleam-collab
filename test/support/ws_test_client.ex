@@ -40,7 +40,7 @@ defmodule WsTestClient do
     {:ok, conn} = :gun.open(~c"localhost", port, %{protocols: [:http]})
     {:ok, _protocol} = :gun.await_up(conn, 1000)
     stream = :gun.get(conn, path)
-    {:response, :fin, status, _headers} = :gun.await(conn, stream, 1000)
+    {:response, _fin, status, _headers} = :gun.await(conn, stream, 1000)
     :gun.close(conn)
     status
   end
