@@ -35,7 +35,7 @@ defmodule GleamCollab.MixProject do
     [
       "gleam.test": [
         &write_gleam_dep_mix_exs/1,
-        &compile_gleam_stdlib/1,
+        &patch_automerge_compilers/1,
         fn _ -> Mix.Task.run("deps.compile") end,
         &compile_gleam_deps/1,
         &fix_dep_app_files/1,
@@ -46,19 +46,17 @@ defmodule GleamCollab.MixProject do
     ]
   end
 
-  # gleam_stdlib artefacts must exist before deps.compile so mix_gleam can
-  # resolve stdlib types when it compiles automerge as a dep.
-  defp compile_gleam_stdlib(_) do
-    build_lib = Mix.Project.build_path() |> Path.join("lib")
-    dep_dir = "deps/gleam_stdlib"
-    out = Path.join(build_lib, "gleam_stdlib")
-    artefacts = Path.join(out, "_gleam_artefacts")
-    if File.dir?(dep_dir) and not File.dir?(artefacts) do
-      File.mkdir_p!(out)
-      0 = Mix.shell().cmd(
-        "gleam compile-package --target erlang --no-beam" <>
-          " --package #{dep_dir} --out #{out} --lib #{build_lib}"
-      )
+  # automerge has `compilers: [:gleam] ++ Mix.compilers()` in its own mix.exs.
+  # During deps.compile, mix_gleam would try to compile automerge's Gleam files,
+  # but gleam_stdlib artefacts aren't available yet (deps.compile wipes them when
+  # it compiles gleam_stdlib). Patch automerge's mix.exs to skip gleam compilation
+  # so compile_gleam_deps/1 can handle it after gleam_stdlib artefacts are ready.
+  defp patch_automerge_compilers(_) do
+    mix_path = "deps/automerge/mix.exs"
+    if File.exists?(mix_path) do
+      content = File.read!(mix_path)
+      patched = String.replace(content, "compilers: [:gleam] ++ Mix.compilers(),", "compilers: Mix.compilers(),", global: false)
+      if patched != content, do: File.write!(mix_path, patched)
     end
   end
 
