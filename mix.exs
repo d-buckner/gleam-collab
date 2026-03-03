@@ -1,8 +1,6 @@
 defmodule GleamCollab.MixProject do
   use Mix.Project
 
-  @automerge_dir Path.expand("../gleam-automerge")
-
   def project do
     [
       app: :gleam_collab,
@@ -37,7 +35,7 @@ defmodule GleamCollab.MixProject do
     [
       "gleam.test": [
         &write_gleam_dep_mix_exs/1,
-        &ensure_automerge_built/1,
+        &compile_gleam_stdlib/1,
         fn _ -> Mix.Task.run("deps.compile") end,
         &compile_gleam_deps/1,
         &fix_dep_app_files/1,
@@ -46,6 +44,22 @@ defmodule GleamCollab.MixProject do
         "gleam.test"
       ]
     ]
+  end
+
+  # gleam_stdlib artefacts must exist before deps.compile so mix_gleam can
+  # resolve stdlib types when it compiles automerge as a dep.
+  defp compile_gleam_stdlib(_) do
+    build_lib = Mix.Project.build_path() |> Path.join("lib")
+    dep_dir = "deps/gleam_stdlib"
+    out = Path.join(build_lib, "gleam_stdlib")
+    artefacts = Path.join(out, "_gleam_artefacts")
+    if File.dir?(dep_dir) and not File.dir?(artefacts) do
+      File.mkdir_p!(out)
+      0 = Mix.shell().cmd(
+        "gleam compile-package --target erlang --no-beam" <>
+          " --package #{dep_dir} --out #{out} --lib #{build_lib}"
+      )
+    end
   end
 
   defp compile_gleam_tests(_) do
@@ -76,26 +90,11 @@ defmodule GleamCollab.MixProject do
     end
   end
 
-  # Ensure automerge is pre-built using its own mix project so it has its own
-  # gleam_stdlib artefacts available during compilation.
-  defp ensure_automerge_built(_) do
-    automerge_dir = @automerge_dir
-    automerge_ebin = Path.join(automerge_dir, "_build/dev/lib/automerge/ebin")
-
-    unless File.dir?(automerge_ebin) do
-      Mix.shell().info("Building automerge in its own directory...")
-      {_, 0} = System.cmd("mix", ["gleam.test"],
-        cd: automerge_dir,
-        env: [{"AUTOMERGE_BUILD", "1"}],
-        into: IO.stream(:stdio, :line)
-      )
-    end
-  end
-
   defp compile_gleam_deps(_) do
     build_lib = Mix.Project.build_path() |> Path.join("lib")
     gleam_deps_in_order = [
       :gleam_stdlib,
+      :automerge,
       :gleam_crypto,
       :gleam_erlang,
       :gleam_http,
@@ -121,21 +120,6 @@ defmodule GleamCollab.MixProject do
       end
     end
 
-    # Sync automerge's full build output into our _build so the dep has
-    # proper ebin/.app and _gleam_artefacts for type imports.
-    automerge_built = Path.join(@automerge_dir, "_build/dev/lib/automerge")
-    automerge_out = Path.join(build_lib, "automerge")
-
-    if File.dir?(automerge_built) do
-      for sub <- ["ebin", "_gleam_artefacts", "include"] do
-        src = Path.join(automerge_built, sub)
-        dest = Path.join(automerge_out, sub)
-        if File.dir?(src) and not File.dir?(dest) do
-          File.mkdir_p!(automerge_out)
-          File.cp_r!(src, dest)
-        end
-      end
-    end
   end
 
   # Fix .app file naming issues for deps where the Hex package name differs
@@ -174,10 +158,7 @@ defmodule GleamCollab.MixProject do
       {:glisten, ">= 0.0.0"},
       {:gleeunit, "~> 1.9", only: [:dev, :test]},
       {:gun, "~> 2.0", only: [:dev, :test]},
-      # compile: "mix compile --no-gleam" skips mix_gleam's compile.gleam so
-      # automerge doesn't fail when gleam_stdlib artefacts aren't in our _build.
-      # We sync automerge's own build outputs in compile_gleam_deps/1 instead.
-      {:automerge, path: @automerge_dir, compile: "mix compile --no-gleam"},
+      {:automerge, "~> 0.1"},
     ]
   end
 end
