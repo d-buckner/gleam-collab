@@ -100,7 +100,7 @@ Client IDs are 16 bytes from `:crypto.strong_rand_bytes(16)`.
 
 | Scenario | Behaviour |
 |---|---|
-| `receive_sync_message` returns `Error(_)` | Drop frame, close connection |
+| `receive_sync_message` returns `Error(_)` | Drop frame silently (non-sync frames can arrive legitimately via the sync pump) |
 | Unknown frame tag | Drop silently |
 | Room actor crashes | Its clients disconnect (Mist WS closes); Registry removes entry; no restart |
 | Client TCP drop | Mist fires `on_close` → normal `Leave` path |

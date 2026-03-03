@@ -12,6 +12,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # automerge is a local path dep (../gleam-automerge). Check it out as a
+      # sibling directory so the path resolves correctly in CI.
+      - name: Check out gleam-automerge dependency
+        uses: actions/checkout@v4
+        with:
+          repository: d-buckner/gleam-automerge
+          path: ../gleam-automerge
+
       - name: Set up Erlang/OTP, Elixir, and Gleam
         uses: erlef/setup-beam@v1
         with:
