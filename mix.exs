@@ -11,12 +11,16 @@ defmodule GleamCollab.MixProject do
       compilers: [:gleam] ++ Mix.compilers(),
       erlc_paths: erlc_paths(Mix.env()),
       erlc_include_path: "build/dev/erlang/gleam_collab/include",
+      elixirc_paths: elixirc_paths(Mix.env()),
       prune_code_paths: false,
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
     ]
   end
+
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_), do: ["lib"]
 
   defp erlc_paths(:test) do
     ["build/dev/erlang/gleam_collab/_gleam_artefacts",
@@ -168,6 +172,7 @@ defmodule GleamCollab.MixProject do
       {:gleam_http, ">= 0.0.0"},
       {:glisten, ">= 0.0.0"},
       {:gleeunit, "~> 1.9", only: [:dev, :test]},
+      {:gun, "~> 2.0", only: [:dev, :test]},
       # compile: "mix compile --no-gleam" skips mix_gleam's compile.gleam so
       # automerge doesn't fail when gleam_stdlib artefacts aren't in our _build.
       # We sync automerge's own build outputs in compile_gleam_deps/1 instead.
