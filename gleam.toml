@@ -1,0 +1,12 @@
+name = "gleam_collab"
+version = "0.1.0"
+
+[dependencies]
+gleam_stdlib = "~> 0.69"
+mist = ">= 0.0.0"
+gleam_otp = ">= 0.0.0"
+gleam_erlang = ">= 0.0.0"
+gleam_http = ">= 0.0.0"
+
+[dev-dependencies]
+gleeunit = "~> 1.9"
