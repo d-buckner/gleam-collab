@@ -1,6 +1,8 @@
 defmodule GleamCollab.MixProject do
   use Mix.Project
 
+  @automerge_dir Path.expand("../gleam-automerge")
+
   def project do
     [
       app: :gleam_collab,
@@ -72,7 +74,7 @@ defmodule GleamCollab.MixProject do
   # Ensure automerge is pre-built using its own mix project so it has its own
   # gleam_stdlib artefacts available during compilation.
   defp ensure_automerge_built(_) do
-    automerge_dir = Path.expand("../gleam-automerge")
+    automerge_dir = @automerge_dir
     automerge_ebin = Path.join(automerge_dir, "_build/dev/lib/automerge/ebin")
 
     unless File.dir?(automerge_ebin) do
@@ -116,8 +118,7 @@ defmodule GleamCollab.MixProject do
 
     # Sync automerge's full build output into our _build so the dep has
     # proper ebin/.app and _gleam_artefacts for type imports.
-    automerge_dir = Path.expand("../gleam-automerge")
-    automerge_built = Path.join(automerge_dir, "_build/dev/lib/automerge")
+    automerge_built = Path.join(@automerge_dir, "_build/dev/lib/automerge")
     automerge_out = Path.join(build_lib, "automerge")
 
     if File.dir?(automerge_built) do
@@ -170,7 +171,7 @@ defmodule GleamCollab.MixProject do
       # compile: "mix compile --no-gleam" skips mix_gleam's compile.gleam so
       # automerge doesn't fail when gleam_stdlib artefacts aren't in our _build.
       # We sync automerge's own build outputs in compile_gleam_deps/1 instead.
-      {:automerge, path: "../gleam-automerge", compile: "mix compile --no-gleam"},
+      {:automerge, path: @automerge_dir, compile: "mix compile --no-gleam"},
     ]
   end
 end
