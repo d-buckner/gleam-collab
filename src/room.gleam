@@ -1,4 +1,4 @@
-import automerge
+import gleam_automerge as automerge
 import gleam/dict.{type Dict}
 import gleam/erlang/process.{type Subject}
 import gleam/option.{None, Some}

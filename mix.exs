@@ -52,7 +52,7 @@ defmodule GleamCollab.MixProject do
   # it compiles gleam_stdlib). Patch automerge's mix.exs to skip gleam compilation
   # so compile_gleam_deps/1 can handle it after gleam_stdlib artefacts are ready.
   defp patch_automerge_compilers(_) do
-    mix_path = "deps/automerge/mix.exs"
+    mix_path = "deps/gleam_automerge/mix.exs"
     if File.exists?(mix_path) do
       content = File.read!(mix_path)
       patched = String.replace(content, "compilers: [:gleam] ++ Mix.compilers(),", "compilers: Mix.compilers(),", global: false)
@@ -68,7 +68,7 @@ defmodule GleamCollab.MixProject do
     lock = Mix.Dep.Lock.read()
     for name <- [:gleam_stdlib, :gleam_crypto, :gleam_erlang, :gleam_http,
                  :gleam_otp, :logging, :exception, :gleam_yielder, :glisten,
-                 :gramps, :mist, :gleeunit] do
+                 :gramps, :mist, :gleeunit, :gleam_automerge] do
       dep_dir = Path.join("deps", "#{name}")
       mix_path = Path.join(dep_dir, "mix.exs")
       if File.exists?(dep_dir) and not File.exists?(mix_path) do
@@ -92,7 +92,7 @@ defmodule GleamCollab.MixProject do
     build_lib = Mix.Project.build_path() |> Path.join("lib")
     gleam_deps_in_order = [
       :gleam_stdlib,
-      :automerge,
+      :gleam_automerge,
       :gleam_crypto,
       :gleam_erlang,
       :gleam_http,
@@ -110,6 +110,11 @@ defmodule GleamCollab.MixProject do
       out = Path.join(build_lib, "#{name}")
       artefacts = Path.join(out, "_gleam_artefacts")
       if File.dir?(dep_dir) and not File.dir?(artefacts) do
+        # Some hex releases omit gleam.toml; gleam compile-package requires it.
+        gleam_toml = Path.join(dep_dir, "gleam.toml")
+        unless File.regular?(gleam_toml) do
+          File.write!(gleam_toml, ~s(name = "#{name}"\n))
+        end
         File.mkdir_p!(out)
         0 = Mix.shell().cmd(
           "gleam compile-package --target erlang --no-beam" <>
@@ -154,9 +159,17 @@ defmodule GleamCollab.MixProject do
       {:gleam_erlang, ">= 0.0.0"},
       {:gleam_http, ">= 0.0.0"},
       {:glisten, ">= 0.0.0"},
+      # Transitive deps that Mix won't fetch automatically from gleam-only packages
+      {:logging, ">= 0.0.0"},
+      {:exception, ">= 0.0.0"},
+      {:gleam_yielder, ">= 0.0.0"},
+      {:gleam_crypto, ">= 0.0.0"},
+      {:gramps, ">= 0.0.0"},
+      {:telemetry, ">= 0.0.0"},
+      {:hpack_erl, ">= 0.0.0"},
       {:gleeunit, "~> 1.9", only: [:dev, :test]},
       {:gun, "~> 2.0", only: [:dev, :test]},
-      {:automerge, "~> 0.1"},
+      {:gleam_automerge, "~> 0.1"},
     ]
   end
 end

@@ -7,7 +7,7 @@ mist = ">= 0.0.0"
 gleam_otp = ">= 0.0.0"
 gleam_erlang = ">= 0.0.0"
 gleam_http = ">= 0.0.0"
-automerge = ">= 0.0.0"
+gleam_automerge = ">= 0.0.0"
 
 [dev-dependencies]
 gleeunit = "~> 1.9"
